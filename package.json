@@ -1,0 +1,15 @@
+{
+  "dependencies": {
+    "inquirer": "^8.2.4"
+  },
+  "scripts": {
+    "start": "node server.js"
+  },
+  "name": "02-challenge",
+  "description": "## Your Task",
+  "version": "1.0.0",
+  "main": "index.js",
+  "devDependencies": {},
+  "author": "",
+  "license": "ISC"
+}
