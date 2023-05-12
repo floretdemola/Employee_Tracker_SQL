@@ -74,6 +74,14 @@ WHERE d.department_name = "Sales";
 INSERT INTO department (department_name)
 VALUES ("Talent");
 
+/* View all Departments by Budget*/
+SELECT
+a.department_id AS id,
+a.department.department_name AS department,
+SUM(role.salary) AS Budget
+FROM role
+INNER JOIN department ON role.department_id
+
 /* Add a role */
 
 INSERT INTO role (role_title, salary, department_id)

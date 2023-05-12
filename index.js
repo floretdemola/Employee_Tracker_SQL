@@ -1,6 +1,7 @@
 // Imported required packages
 const inquirer = require('inquirer');
 const connection = require('./server');
+const table = require('console.table');
 
 
 connection.connect((error) => {
@@ -97,16 +98,18 @@ const promptUser = () => {
 
 // View all Employees
 const viewAllEmployees = () => {
-let sql =       `SELECT employee.id, 
-                  employee.first_name, 
-                  employee.last_name, 
-                  role.title, 
-                  department.department_name AS 'department', 
-                  role.salary
-                  FROM employee, role, department 
-                  WHERE department.id = role.department_id 
-                  AND role.id = employee.role_id
-                  ORDER BY employee.id ASC`;
+let sql = `SELECT a.id AS employee_id,
+            a.first_name AS first_name,
+            a.last_name, 
+            c.title,
+            d.department_name,
+            c.salary,
+            b.first_name AS manager_firstname,
+            b.last_name AS manager_lastname
+            FROM employee a
+            LEFT JOIN employee b ON a.manager_id = b.id
+            INNER JOIN role c ON a.role_id = c.id
+            INNER JOIN department d ON d.id = c.department_id;`;
   connection.promise().query(sql, (error, res) => {
     if (error) throw error;
     console.log('Current Employees:');
@@ -117,11 +120,13 @@ let sql =       `SELECT employee.id,
 
 // View all Roles
 const viewAllRoles = () => {
-  let sql =       `SELECT role.id,
-                    role.title,
-                    department.department_name AS department
-                    FROM role
-                    INNER JOIN department ON role.department_id = department.id`;
+  let sql = `SELECT role.id AS role_id,
+            role.title,
+            role.salary,
+            department.department_name
+            FROM role
+            JOIN department 
+            ON role.department_id = department.id`;
     connection.promise().query(sql, (error, res) => {
       if (error) throw error;
       res.forEach((role) => {console.log(role.title);
@@ -132,8 +137,7 @@ const viewAllRoles = () => {
 
 // View all departments
 const viewAllDepartments = () => {
-  let sql =       `SELECT department.id AS id,
-                    department.department_name AS department FROM department`;
+  let sql = `SELECT * FROM department`;
     connection.promise().query(sql, (error, res) => {
       if (error) throw error;
       console.log('All Departments:')
@@ -144,12 +148,20 @@ const viewAllDepartments = () => {
 
 // View all Employees by Department
 const viewEmployeesByDepartment = () => {
-  let sql =       `SELECT employee.first_name,
-                    employee.last_name, 
-                    department.department_name AS department
-                    FROM employee 
-                    LEFT JOIN role ON employee.role_id = role.id 
-                    LEFT JOIN department ON role.department_id = department.id`;
+  let sql = `SELECT 
+              a.id AS employee_id, 
+              a.first_name, 
+              a.last_name, 
+              c.role_title, 
+              d.department_name, 
+              c.salary, 
+              b.first_name AS manager_firstname, 
+              b.last_name AS manager_lastname 
+              FROM employee a 
+              LEFT JOIN employee b ON a.manager_id = b.id 
+              INNER JOIN roles c ON a.role_id = c.id 
+              INNER JOIN department d ON d.id = c.department_id 
+              WHERE d.department_name = ?;`;
     connection.query(sql, (error, res) => {
       if (error) throw error;
       console.log('Employees by Department:');
@@ -337,12 +349,7 @@ const addDepartment = () => {
 
 // Update an Employee's role
 const updateEmployeeRole = () => {
-  let sql =     `SELECT employee.id, 
-                  employee.first_name, 
-                  employee.last_name, 
-                  role.id AS "role_id"
-                  FROM employee, role, department 
-                  WHERE department.id = role.department_id AND role.id = employee.role_id`;
+  let sql = `UPDATE employee SET role_id = (SELECT r.id FROM roles r WHERE r.role_title = ?) WHERE employee.first_name = ? AND employee.last_name = ?;`;
 
   connection.promise().query(sql, (error, res) => {
     if (error) throw error;
@@ -405,11 +412,7 @@ const updateEmployeeRole = () => {
 // Update an Employee's manager
 
 const updateEmployeeManager = () => {
-  let sql =     `SELECT employee.id, 
-                  employee.first_name, 
-                  employee.last_name, 
-                  employee.manager_id
-                  FROM employee`;
+  let sql = `UPDATE employee SET manager_id = (SELECT a.id FROM (SELECT b.id FROM employee b WHERE b.first_name = ? AND b.last_name = ?) a) WHERE first_name = ? AND last_name = ?;`;
 
     connection.promise().query(sql, (error, res) => {
       if (error) throw error;
