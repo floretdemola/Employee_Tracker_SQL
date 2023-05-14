@@ -3,7 +3,6 @@ const inquirer = require('inquirer');
 const connection = require('./server');
 const table = require('console.table');
 
-
 connection.connect((error) => {
   if (error) throw error;
   console.log("Employee Tracker")
@@ -97,8 +96,9 @@ const promptUser = () => {
 };
 
 // View all Employees
-const viewAllEmployees = () => {
-let sql = `SELECT a.id AS employee_id,
+const viewAllEmployees = async () => {
+try {
+const sql = `SELECT a.id AS employee_id,
             a.first_name AS first_name,
             a.last_name, 
             c.title,
@@ -110,65 +110,86 @@ let sql = `SELECT a.id AS employee_id,
             LEFT JOIN employee b ON a.manager_id = b.id
             INNER JOIN role c ON a.role_id = c.id
             INNER JOIN department d ON d.id = c.department_id;`;
-  connection.promise().query(sql, (error, response) => {
-    if (error) throw error;
+  const [response] = await connection.promise().query(sql);
     console.log('Current Employees:');
     console.table(response);
     promptUser();
-  });
+  } catch (error) {
+    console.error(error);
+  };
 };
 
 // View all Roles
-const viewAllRoles = () => {
-  let sql = `SELECT role.id AS role_id,
+const viewAllRoles = async () => {
+try {
+  const sql = `SELECT role.id AS role_id,
             role.title,
             role.salary,
             department.department_name
             FROM role
             JOIN department 
             ON role.department_id = department.id`;
-    connection.promise().query(sql, (error, response) => {
-      if (error) throw error;
-      response.forEach((role) => {console.log(role.title);
-      });
-      promptUser();
-    });
-};
+    const [response] = await connection.promise().query(sql);
+    console.log('Current Roles:');
+    console.table(response);
+    promptUser();
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
 // View all departments
-const viewAllDepartments = () => {
-  let sql = `SELECT * FROM department`;
-    connection.promise().query(sql, (error, response) => {
-      if (error) throw error;
+const viewAllDepartments = async () => {
+try {
+  const sql = `SELECT * FROM department`;
+    const [response] = await connection.promise().query(sql);
       console.log('All Departments:')
       console.table(response);
       promptUser();
-    });
-};
+    }  catch (error) {
+      console.error(error);
+    }
+  };
 
 // View all Employees by Department
-const viewEmployeesByDepartment = () => {
-  let sql = `SELECT 
-              a.id AS employee_id, 
-              a.first_name, 
-              a.last_name, 
-              c.role_title, 
-              d.department_name, 
-              c.salary, 
-              b.first_name AS manager_firstname, 
-              b.last_name AS manager_lastname 
-              FROM employee a 
-              LEFT JOIN employee b ON a.manager_id = b.id 
-              INNER JOIN roles c ON a.role_id = c.id 
-              INNER JOIN department d ON d.id = c.department_id 
-              WHERE d.department_name = ?;`;
-    connection.query(sql, (error, response) => {
-      if (error) throw error;
+
+const getDepartmentChoices = async () => {
+  const sql = `SELECT department_name FROM department`;
+  const [rows] = await connection.promise().query(sql);
+  return rows.map(row => row.department_name);
+}
+
+const viewEmployeesByDepartment = async () => {
+  try {
+    const departmentName = await inquirer.prompt({
+      name: 'department',
+      type: 'list',
+      message: 'Which department would you like to view?',
+      choices: await getDepartmentChoices(),
+    });
+
+      const sql = `SELECT 
+                    a.id AS employee_id, 
+                    a.first_name, 
+                    a.last_name, 
+                    c.title, 
+                    d.department_name, 
+                    c.salary, 
+                    b.first_name AS manager_firstname, 
+                    b.last_name AS manager_lastname 
+                    FROM employee a 
+                    LEFT JOIN employee b ON a.manager_id = b.id 
+                    INNER JOIN role c ON a.role_id = c.id 
+                    INNER JOIN department d ON d.id = c.department_id 
+                    WHERE d.department_name = ?;`;
+    const [response] = await connection.promise().query(sql, [departmentName.department]);
       console.log('Employees by Department:');
       console.table(response);
       promptUser();
-    });
-};
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
 // View all Deparment by Budget
 const viewDepartmentBudget = () => {
@@ -186,8 +207,9 @@ const viewDepartmentBudget = () => {
 };
 
 // Add new Employee
-const addEmployee = () => {
-  inquirer.prompt([
+const addEmployee = async () => {
+try {
+  const answer = await inquirer.prompt([
     {
       type: 'input',
       name: 'first_name',
@@ -214,158 +236,120 @@ const addEmployee = () => {
         }
       }
     }
-  ])
-  .then(answer => {
-    const crit = [answer.first_name, answer.last_name]
+  ]);
     const roleSql = `SELECT role.id, role.title FROM role`;
-    connection.promise().query(roleSql, (error, data) => {
-      if (error) throw error;
-      const roles = data.map(({ id, title }) => ({ name: title, value: id}));
-      inquirer.prompt([
+    const [roleData,] = await connection.promise().query(roleSql);
+    const roles = roleData.map(({ id, title }) => ({ name: title, value: id}));
+    const roleChoice = await inquirer.prompt([
         {
           type: 'list',
           name: 'role',
           message: "What is this employee\'s role?",
           choices: roles
         }
-      ])
-      .then(roleChoice => {
-        const role = roleChoice.role;
-        crit.push(role);
-        const managerSql = `SELECT * FROM employee`;
-        connection.promise().query(managerSql, (error, data) => {
-          if (error) throw error;
-          const managers = data.map(({ id, first_name, last_name}) => ({ name: first_name + " "+ last_name, value: id}));
-          inquirer.prompt([
+      ]);
+    const role = roleChoice.role;
+      
+    const managerSql = `SELECT * FROM employee`;
+    const [managerData,] = await connection.promise().query(managerSql);
+    const managers = managerData.map(({ id, first_name, last_name }) => ({ name: first_name + ' ' + last_name, value: id}));
+    
+    const managerChoice = await inquirer.prompt([
             {
               type: 'list',
               name: 'manager',
               message: "Who is the employee's manager?",
               choices: managers
             }
-          ])
-          .then(managerChoice => {
-            const manager = managerChoice.manager;
-            crit.push(manager);
-            const sql = `INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)`;
-            connection.query(sql, crit, (error) => {
-              if (error) throw error;
-              console.log('Employee added successfully');
-              viewAllEmployees();
-            });
-          });
-        });
-     });
-    });
-  })
-};
+          ]);
+    const manager = managerChoice.manager;
+    const crit = [answer.first_name, answer.last_name, role, manager];
+    const sql = `INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)`;
+    await connection.promise().query(sql, crit);
+    console.log('Employee added successfully');
+    viewAllEmployees();
+        } catch (error) {
+          console.log(error);
+        }
+      };
 
 // Add a new role
-const addRole = () => {
-const sql = 'SELECT * FROM department'
+const addRole = async () => {
+try {
+  const addRole = await inquirer.prompt([
+    {
+      name: 'newRole',
+      type: 'input',
+      message: 'What is the name of this new role?',
+    },
+    {
+      name: 'salary',
+      type: 'input',
+      message: 'What is the salary of this new role?',
+    },
+    ]);
 
-  connection.promise().query(sql, (error, response) => {
-    if (error) throw error;
-    let deptNamesArray = [];
-    response.forEach((department) => {deptNamesArray.push(department.department_name);
-    });
-    deptNamesArray.push('Create Department');
-    inquirer
-    .prompt([
+  const departmentSql = 'SELECT * FROM department';
+  const [departmentData,] = await connection.promise().query(departmentSql);
+  const departments = departmentData.map(({ id, name }) => ({ name: name, value: id}));
+  const departmentChoice = await inquirer.prompt([
       {
         name: 'departmentName',
         type: 'list',
         message: 'Select the department where this new role is in',
-        choices: deptNamesArray
+        choices: departments,
       }
-    ])
-    .then((answer) => {
-      if (answer.departmentName === 'Create Department'){
-        this.addDepartment();
-      } else {
-        addRoleResume(answer);
-      }
-    });
-
-    const addRoleResume = (departmentData) => {
-      inquirer
-      .prompt ([
-        {
-          name: 'newRole',
-          type: 'input',
-          message: 'What is the name of this new role?',
-          validate: validate.validateString
-        },
-        {
-          name: 'salary',
-          type: 'input',
-          message: 'What is the salary of this new role?',
-          validate: validate.validateSalary
-        }
-      ])
-      .then((answer) => {
-        let createdRole = answer.newRole;
-        let departmentId;
-
-        response.forEach((department) => {
-          if (departmentData.departmentName === department.department_name) {departmentId = department.id;}
-        });
-        let sql = `INSERT INTO role (title, salary, department_id) VALUES (?, ?, ?)`;
-        let crit = [createdRole, answer.salary, departmentId];
-
-        connection.promise().query(sql, crit, (error) => {
-          if (error) throw error;
-          console.log("Role successfully created!");
-          viewAllRoles();
-        });
-      });
-    };
-  });
-};
-
+    ]);
+    const department = departmentChoice.departmentName;
+    const crit = [addRole.newRole, addRole.salary, department];
+    const sql = 'INSERT INTO role (title, salary, department_id) VALUES (?, ?, ?)';
+    await connection.promise().query(sql, crit);
+    console.log('Role successfully created!')
+    viewAllRoles();
+        } catch (error) {
+          console.log(error);
+        };
+      };
 
 // Add a new department
-const addDepartment = () => {
-  inquirer
-  .prompt ([
+const addDepartment = async () => {
+try {
+    const answer = await inquirer.prompt ([
     {
       name: 'newDepartment',
       type: 'input',
       message: 'What is the name of the new department?',
-      validate: validate.validateString
     }
-  ])
-  .then((answer) => {
-    let createdDepartment = answer.newDepartment;
-    let sql = `INSERT INTO department (department_name) VALUES (?)`;
-    connection.query(sql, createdDepartment, (error, response) => {
-      if (error) throw error;
+  ]);
+  
+  const createdDepartment = answer.newDepartment;
+  const sql = `INSERT INTO department (department_name) VALUES (?)`;
+  await connection.promise().query(sql, [createdDepartment]);
       console.log(createdDepartment + "Department successfully created!");
       viewAllDepartments();
-    });
-  });
+    } catch (error) {
+      console.log(error);
+    }
 };
 
 
 // Update an Employee's role
-const updateEmployeeRole = () => {
-  let sql = `UPDATE employee SET role_id = (SELECT r.id FROM roles r WHERE r.role_title = ?) WHERE employee.first_name = ? AND employee.last_name = ?;`;
+const updateEmployeeRole = async () => {
+try {
+  let sql = `SELECT * FROM employee`;
 
-  connection.promise().query(sql, (error, response) => {
-    if (error) throw error;
+  const [employeeData,] = await connection.promise().query(sql);
     let employeeNamesArray = [];
-      response.forEach((employee) => {employeeNamesArray.push(`${employee.first_name} ${employee.last_name}`);
+    employeeData.forEach((employee) => {employeeNamesArray.push(`${employee.first_name} ${employee.last_name}`);
       });
 
-    let sql = `SELECT role.id, role.title FROM role`;
-    connection.promise().query(sql, (error, response) => {
-      if (error) throw error;
-      let rolesArray = [];
-        response.forEach((role) => {rolesArray.push(role.title);
+    sql = `SELECT id, title FROM role`;
+    const [roleData,] = await connection.promise().query(sql);      let rolesArray = [];
+        roleData.forEach((role) => {rolesArray.push(role.title);
         });
     
-    inquirer
-    .prompt ([
+    const answer = await inquirer
+      .prompt ([
       {
         name: 'chosenEmployee',
         type: 'list',
@@ -379,35 +363,31 @@ const updateEmployeeRole = () => {
         choices: rolesArray
       }
     ])
-    .then((answer) => {
-      let newTitleId, employeeId;
 
-      response.forEach((role) => {
+    let newTitleId, employeeId;
+
+      roleData.forEach((role) => {
         if (answer.chosenRole === role.title) 
           {
           newTitleId = role.id;
           }
       });
 
-      response.forEach((employee) => {
+      employeeData.forEach((employee) => {
         if (answer.chosenEmployee === `${employee.first_name} ${employee.last_name}`)
           {
           employeeId = employee.id;
           }
       });
       
-      let sqls = `UPDATE employee SET employee.role_id = ? WHERE employee.id = ?`;
-      connection.query(
-        sqls, [newTitleId, employeeId],
-        (error) => {
-          if (error) throw error;
+      sql = `UPDATE employee SET role_id = ? WHERE id = ?`;
+      await connection.promise().query(sql, [newTitleId, employeeId]);
           console.log('Employee role updated successfully!');
           promptUser();
-          });
-        });
-    });
-  });
-};
+          } catch (error) {
+            console.log(error);
+          };
+      };
 
 // Update an Employee's manager
 

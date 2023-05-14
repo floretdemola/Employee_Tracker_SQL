@@ -84,7 +84,7 @@ INNER JOIN department ON role.department_id
 
 /* Add a role */
 
-INSERT INTO role (role_title, salary, department_id)
+INSERT INTO role (title, salary, department_id)
 VALUES ("Talent Executive", 75000, 5);
 
 /* Add an employee */
