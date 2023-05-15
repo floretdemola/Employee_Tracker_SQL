@@ -45,13 +45,13 @@ THEN I am prompted to select an employee to update and their new role and this i
 
 The following video shows an example of the application being used from the command line:
 
-[![A video thumbnail shows the command-line employee management application with a play button overlaying the view.](./Assets/employeemanagerrecording.webm)] <iframe src="https://drive.google.com/file/d/1ojP9Jw7ulDHuJpt5LbpCAslEkgkYC7nm/preview" width="640" height="480"></iframe>
+[![A video thumbnail shows the command-line employee management application with a play button overlaying the view.](./Assets/employeemanagerrecording.webm)] <iframe src="https://drive.google.com/file/d/1ojP9Jw7ulDHuJpt5LbpCAslEkgkYC7nm/view?usp=sharing" width="640" height="480"></iframe>
 
 ## Review
 
 You are required to submit BOTH of the following for review:
 
-* A walkthrough video demonstrating the functionality of the application. <iframe src="https://drive.google.com/file/d/1ojP9Jw7ulDHuJpt5LbpCAslEkgkYC7nm/preview" width="640" height="480"></iframe>
+* A walkthrough video demonstrating the functionality of the application. <iframe src="https://drive.google.com/file/d/1ojP9Jw7ulDHuJpt5LbpCAslEkgkYC7nm/view?usp=sharing" width="640" height="480"></iframe> https://drive.google.com/file/d/1ojP9Jw7ulDHuJpt5LbpCAslEkgkYC7nm/view?usp=sharing 
 
 * The URL of the GitHub repository, with a unique name and a README describing the project. https://github.com/floretdemola/Employee_Tracker_SQL
 
