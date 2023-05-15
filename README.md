@@ -38,6 +38,7 @@ THEN I am prompted to select an employee to update and their new role and this i
 # Installation
 
 [MySQL2 package](https://www.npmjs.com/package/mysql2) to connect to your MySQL database and perform queries
+
 [Inquirer package](https://www.npmjs.com/package/inquirer/v/8.2.4) to interact with the user via the command line.
 
 
@@ -51,7 +52,9 @@ The following video shows an example of the application being used from the comm
 
 You are required to submit BOTH of the following for review:
 
-* A walkthrough video demonstrating the functionality of the application. <iframe src="https://drive.google.com/file/d/1ojP9Jw7ulDHuJpt5LbpCAslEkgkYC7nm/view?usp=sharing" width="640" height="480"></iframe> https://drive.google.com/file/d/1ojP9Jw7ulDHuJpt5LbpCAslEkgkYC7nm/view?usp=sharing 
+* A walkthrough video demonstrating the functionality of the application. [![A video thumbnail shows the command-line employee management application with a play button overlaying the view.](./Assets/employeemanagerrecording.webm)] 
+
+Link: https://drive.google.com/file/d/1ojP9Jw7ulDHuJpt5LbpCAslEkgkYC7nm/view?usp=sharing 
 
 * The URL of the GitHub repository, with a unique name and a README describing the project. https://github.com/floretdemola/Employee_Tracker_SQL
 
